@@ -1,0 +1,51 @@
+@model SportsStore.Domain.Models.Cart
+@{
+    ViewData["Title"] = "Giỏ hàng của bạn";
+}
+<h1>Giỏ hàng của bạn</h1>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Số lượng</th>
+            <th>Sản phẩm</th>
+            <th class="text-right">Giá</th>
+            <th class="text-right">Tổng cộng</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var line in Model.Lines)
+        {
+            <tr>
+                <td class="text-center">@line.Quantity</td>
+                <td class="text-left">@line.Product.Name</td>
+                <td class="textright">@line.Product.Price.ToString("C")</td>
+                <td class="text-right">
+                    @((line.Quantity * line.Product.Price).ToString("C"))
+                </td>
+                <td class="text-center">
+                    <form asp-action="RemoveFromCart" method="post">
+                        <input type="hidden" name="ProductId" value="@line.Product.ProductID" />
+                        <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            Xóa
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3" class="text-right">Tổng cộng:</td>
+            <td class="text-right">
+                @Model.ComputeTotalValue().ToString("C")
+            </td>
+            <td></td>
+        </tr>
+    </tfoot>
+</table>
+<div class="text-center">
+    <a class="btn btn-primary" asp-action="List" asp-controller="Product">Tiếp tục mua sắm</a>
+    <a class="btn btn-success" asp-action="Checkout" asp-controller="Order">Thanh toán</a>
+</div>

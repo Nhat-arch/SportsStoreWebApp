@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Trang Chủ";
+}
+<div class="text-center">
+    <h1 class="display-4">Chào mừng!</h1>
+    <p>Tìm hiểu về <a href="https://learn.microsoft.com/aspnet/core">xây
+            dựng ứng dụng Web với ASP.NET Core</a>.</p>
+    ---
+    <h2>Thông tin trình duyệt của bạn (User-Agent):</h2>
+    @if (ViewBag.UserAgent != null)
+    {
+        <p style="font-size: 1.1em; color: green; word-break: breakall;">@ViewBag.UserAgent</p>
+    }
+    else
+    {
+        <p>Không thể lấy thông tin User-Agent.</p>
+    }
+    ---
+</div>

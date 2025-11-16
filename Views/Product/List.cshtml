@@ -1,0 +1,83 @@
+@using SportsStore.Domain.Models @*Đảm bảo namespace này khớp với Product model của bạn*@
+@model IEnumerable<Product> // View này nhận một tập hợp các đối tượng Product
+@{
+    ViewData["Title"] = "Danh sách sản phẩm";
+    int totalPages = (int)Math.Ceiling((decimal)ViewBag.TotalItems / ViewBag.ItemsPerPage);
+    string currentCategory = ViewBag.CurrentCategory as string ?? "";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    var categories = ViewBag.Categories;
+}
+<h1 class="text-center my-4">@ViewData["Title"]</h1>
+@if (!string.IsNullOrWhiteSpace(currentCategory))
+{
+    <h2 class="text-primary text-center mb-3">@currentCategory</h2>
+}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <h3>Danh mục</h3>
+        <div class="list-group">
+            <a asp-action="List" asp-controller="Product" asp-route-category="" class="list-group-item list-group-item-action @(string.IsNullOrWhiteSpace(currentCategory) ? "active" : "")">
+                Tất cả sản phẩm
+            </a>
+            @foreach (var category in categories)
+            {
+                <a asp-action="List" asp-controller="Product" asp-route-category="@category" class="list-group-item list-group-item-action @(category == currentCategory ? "active" : "")">
+                    @category
+                </a>
+            }
+        </div>
+    </div>
+    <!-- Main content -->
+    <div class="col-md-9">
+        @if (Model?.Any() == true)
+        {
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @foreach (var p in Model)
+                {
+                    <div class="col">
+                        <div class="card h-100 shadow-sm">
+                            <img src="@(!string.IsNullOrEmpty(p.ImageUrl) ? p.ImageUrl : "https://via.placeholder.com/200x200?text=No+Image")"
+                                class="card-img-top" alt="@p.Name" style="height: 200px; object-fit: cover;" />
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">@p.Name</h5>
+                                <p class="card-text textmuted">@p.Category</p>
+                                <p class="card-text flex-grow1">@p.Description</p>
+                                <div class="d-flex justify-contentbetween align-items-center mt-auto">
+                                    <h4 class="text-success mb0">@p.Price.ToString("C")</h4>
+                                    <form asp-action="AddToCart" asp-controller="Cart" method="post" class="d-inline">
+                                        <input type="hidden" name="productId" value="@p.ProductID" />
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-cartplus"></i> Thêm vào giỏ
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <!-- Pagination -->
+            <nav aria-label="Phân trang" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" asp-controller="Product" asp-action="List" asp-route-productPage="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+        else
+        {
+            <div class="alert alert-warning text-center" role="alert">
+                Không tìm thấy sản phẩm nào trong danh mục này.
+            </div>
+        }
+    </div>
+</div>
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script>
+}

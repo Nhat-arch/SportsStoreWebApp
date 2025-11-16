@@ -1,0 +1,35 @@
+@model SportsStore.Domain.Models.Product // Khai báo Model cho View
+@{
+    ViewData["Title"] = "Tạo Sản phẩm"; // Tiêu đề trang
+}
+<h1>Tạo Sản phẩm</h1>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create"> @* Biểu mẫu gửi dữ liệu đến hành động Create *@
+            <div asp-validation-summary="ModelOnly" class="textdanger"></div> @* Hiển thị tất cả lỗi validation của model *@
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label> @* Nhãn cho trường Name *@
+                <input asp-for="Name" class="form-control" /> @* Ô nhập liệu cho Name *@
+                <span asp-validation-for="Name" class="textdanger"></span> @* Hiển thị lỗi validation cụ thể cho trường Name *@
+            </div>
+            <div class="form-group">
+                <label asp-for="Price" class="control-label"></label> @* Nhãn cho trường Price *@
+                <input asp-for="Price" class="form-control" /> @* Ô nhập liệu cho Price *@
+                <span asp-validation-for="Price" class="textdanger"></span> @* Hiển thị lỗi validation cụ thể cho trường Price *@
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Tạo" class="btn btn-primary" /> @* Nút gửi biểu mẫu *@
+            </div>
+        </form>
+    </div>
+</div>
+<div>
+    <a asp-action="List">Quay lại Danh sách</a> @* Liên kết quay lại trang danh sách *@
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    @* Bao gồm các script client-side validation *@
+}

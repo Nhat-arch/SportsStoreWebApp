@@ -1,0 +1,20 @@
+@* Views/Home/Error.cshtml *@
+@{
+    ViewData["Title"] = "Lỗi!";
+}
+<h1 class="text-danger">Lỗi!</h1>
+<h2 class="text-danger">Đã có lỗi xảy ra khi xử lý yêu cầu của bạn.</h2>
+@if (ViewBag.RequestId != null)
+{
+    <p>
+        <strong>ID yêu cầu:</strong> <code>@ViewBag.RequestId</code>
+    </p>
+}
+<p>
+    Xin lỗi vì sự bất tiện này. Chúng tôi đang làm việc để khắc phục sự
+    cố.
+    Vui lòng thử lại sau!
+</p>
+<p> Nếu bạn tiếp tục gặp sự cố này, vui lòng cung cấp "ID yêu cầu" ở trên
+    cho bộ phận hỗ trợ.
+</p>

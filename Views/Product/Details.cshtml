@@ -1,0 +1,18 @@
+@model SportsStore.Domain.Models.Product // Khai báo Model cho View
+@{
+    ViewData["Title"] = Model.Name;
+}
+<h1>Chi tiết sản phẩm: @Model.Name</h1>
+<dl class="row">
+    <dt class="col-sm-2">Mã sản phẩm:</dt>
+    <dd class="col-sm-10">@Model.ProductID</dd>
+    <dt class="col-sm-2">Tên:</dt>
+    <dd class="col-sm-10">@Model.Name</dd>
+    <dt class="col-sm-2">Mô tả:</dt>
+    <dd class="col-sm-10">@Model.Description</dd>
+    <dt class="col-sm-2">Giá:</dt>
+    <dd class="col-sm-10">@Model.Price.ToString("C")</dd>
+    <dt class="col-sm-2">Danh mục:</dt>
+    <dd class="col-sm-10">@Model.Category</dd>
+</dl>
+<a asp-controller="Product" asp-action="List" class="btn btnprimary">Quay lại danh sách</a>
