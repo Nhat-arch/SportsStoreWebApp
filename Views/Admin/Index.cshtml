@@ -1,0 +1,49 @@
+@model IQueryable<SportsStore.Domain.Models.Product>
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+}
+<h1 class="text-center my-4">Quản lý sản phẩm</h1>
+<div class="text-end mb-3">
+    <a asp-action="Create" class="btn btn-success">Thêm sản phẩm mới</a>
+</div>
+@if (Model.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên</th>
+                <th>Mô tả</th>
+                <th>Danh mục</th>
+                <th>Giá</th>
+                <th class="text-center">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.ProductID</td>
+                    <td>@p.Name</td>
+                    <td>@p.Description</td>
+                    <td>@p.Category</td>
+                    <td>@p.Price.ToString("C")</td>
+                    <td class="text-center">
+                        <a asp-action="Edit" asp-route-productId="@p.ProductID" class="btn btn-sm btn-warning">Sửa</a>
+                        <form asp-action="Delete" method="post" class="dinline">
+                            <input type="hidden" name="productId" value="@p.ProductID" />
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?');">
+                                Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">Chưa có sản phẩm nào.</div>
+}

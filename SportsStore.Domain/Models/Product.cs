@@ -26,11 +26,10 @@ namespace SportsStore.Domain.Models
         [Required(ErrorMessage = "Vui lòng chỉ định danh mục.")]
         [Display(Name = "Danh mục")]
         public string Category { get; set; } = string.Empty;
-        [Url(ErrorMessage = "URL hình ảnh không hợp lệ.")]
         [Display(Name = "URL hình ảnh")]
         public string? ImageUrl { get; set; } // Có thể null
                                               // Thêm một thuộc tính CategoryId để liên kết với Category Model (sẽ tạo sau)
-                                              // public int CategoryId { get; set; }
-                                              // public virtual Category? CategoryRef { get; set; } //Navigation property(nếu có EF Core)
+        public int CategoryId { get; set; }
+        public Category? CategoryRef { get; set; }
     }
 }

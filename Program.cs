@@ -1,15 +1,25 @@
 using SportsStore.Domain.Abstract;
-using SportsStoreWebApp.Concrete;
 using SportsStoreWebApp.Configurations;
+using Microsoft.EntityFrameworkCore;
+using SportsStore.Infrastructure.Repositories;
+using SportsStore.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+ options.UseSqlServer(
+
+builder.Configuration.GetConnectionString("SportsStoreConnection")));
 
 // Đăng ký PagingSettings để có thể inject IOptions<PagingSettings> vào Controller
 builder.Services.Configure<PagingSettings>(builder.Configuration.GetSection("PagingSettings"));
 
 // Đăng ký dịch vụ Product Repository với vòng đời Scoped
 // Mỗi yêu cầu HTTP sẽ nhận một thể hiện mới của FakeProductRepository
-builder.Services.AddScoped<IProductRepository, FakeProductRepository>();
+
+// builder.Services.AddScoped<IProductRepository, FakeProductRepository>();
+builder.Services.AddScoped<IProductRepository, EFProductRepository>();// Thay thế bằng EFProductRepository
+builder.Services.AddScoped<ICategoryRepository, EFCategoryRepository>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<MyService>();
