@@ -1,0 +1,12 @@
+@model IEnumerable<string>
+<div class="d-grid gap-2">
+    <a asp-action="Index" asp-controller="Home" asp-route-category="" class="btn btn-block btn-outline-secondary @(string.IsNullOrEmpty(ViewBag.SelectedCategory) ? "active" : "")">
+        Tất cả sản phẩm
+    </a>
+    @foreach (string category in Model)
+    {
+        <a asp-action="Index" asp-controller="Home" asp-routecategory="@category" class="btn btn-block btn-outline-secondary @(category == ViewBag.SelectedCategory ? "active" : "")">
+            @category
+        </a>
+    }
+</div>

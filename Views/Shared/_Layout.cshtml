@@ -38,23 +38,34 @@
                                     <i class="fa fa-shopping-cart"></i> Giỏ hàng </a>
                             </li>
                         </ul>
+                        <div class="d-flex">
+                            @await Component.InvokeAsync("CartSummary")
+                        </div>
                     </div>
                 </div>
             </nav>
         </header>
         <div class="container">
-            <main role="main" class="pb-3">
-                @if (TempData["message"] is string message)
-                {
-                    <div class="alert alert-@(TempData["messageType"] ?? "info") alert-dismissible fade show" role="alert">
-                        @message
-                        <button type="button" class="btn-close" data-bsdismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
-                @RenderBody()
-            </main>
+            <div class="row">
+                <div class="col-md-3">
+                    @* View Component danh mục sản phẩm *@
+                    @await Component.InvokeAsync("NavigationMenu")
+                </div>
+                <div class="col-md-9">
+                    <main role="main" class="pb-3">
+                        @if (TempData["message"] is string message)
+                        {
+                            <div class="alert alert-@(TempData["messageType"] ?? "info") alert-dismissible fade show"
+                                role="alert">
+                                @message
+                                <button type="button" class="btn-close" data-bsdismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
+                        @RenderBody()
+                    </main>
+                </div>
+            </div>
         </div>
-
         <footer class="border-top footer text-muted">
             <div class="container">
                 &copy; 2025 - SportsStoreWebApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>

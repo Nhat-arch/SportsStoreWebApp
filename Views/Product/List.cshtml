@@ -33,29 +33,10 @@
         @if (Model?.Any() == true)
         {
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+
                 @foreach (var p in Model)
                 {
-                    <div class="col">
-                        <div class="card h-100 shadow-sm">
-                            <img src="@(!string.IsNullOrEmpty(p.ImageUrl) ? p.ImageUrl : "https://via.placeholder.com/200x200?text=No+Image")"
-                                class="card-img-top" alt="@p.Name" style="height: 200px; object-fit: cover;" />
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">@p.Name</h5>
-                                <p class="card-text textmuted">@p.Category</p>
-                                <p class="card-text flex-grow1">@p.Description</p>
-                                <div class="d-flex justify-contentbetween align-items-center mt-auto">
-                                    <h4 class="text-success mb0">@p.Price.ToString("C")</h4>
-                                    <form asp-action="AddToCart" asp-controller="Cart" method="post" class="d-inline">
-                                        <input type="hidden" name="productId" value="@p.ProductID" />
-                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-cartplus"></i> Thêm vào giỏ
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <partial name="_ProductCard" model="p" />
                 }
             </div>
             <!-- Pagination -->

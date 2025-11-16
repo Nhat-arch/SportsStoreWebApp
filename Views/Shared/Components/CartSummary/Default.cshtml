@@ -1,0 +1,8 @@
+@model SportsStore.Domain.Models.Cart
+<div class="navbar-text float-end">
+    <a class="btn btn-outline-info" asp-controller="Cart" asp-action="Index">
+        <i class="fas fa-shopping-cart"></i>
+        @Model.Lines.Sum(x => x.Quantity) sản phẩm
+        (@Model.ComputeTotalValue().ToString("C"))
+    </a>
+</div>
