@@ -1,11 +1,13 @@
 using System.Linq; // Cần cho IQueryable
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SportsStore.Domain.Abstract;
 using SportsStore.Domain.Models;
 namespace SportsStoreWebApp.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private IProductRepository _repository;
@@ -19,7 +21,7 @@ namespace SportsStoreWebApp.Controllers
                                                                  // GET: Admin/Edit/5 hoặc Admin/Edit
         public async Task<IActionResult> Edit(int productId)
         {
-            Product? product = await _repository.Products.Include(p => p.CategoryRef).FirstOrDefaultAsync(p => p.ProductID == productId);
+            Product? product = await _repository.Products.FirstOrDefaultAsync(p => p.ProductID == productId);
             if (product == null)
             {
                 return NotFound();
@@ -46,8 +48,12 @@ namespace SportsStoreWebApp.Controllers
             }
         }
         // GET: Admin/Create
-        public ViewResult Create() => View("Edit", new Product()); // Tái sử dụng View Edit cho Create
-                                                                   // POST: Admin/Delete
+        public async Task<ViewResult> Create()
+        {
+            ViewBag.Categories = await _cate.Categories.ToListAsync();
+            return View("Edit", new Product());
+        }  // Tái sử dụng View Edit cho Create
+        // POST: Admin/Delete
         [HttpPost]
         public async Task<IActionResult> Delete(int productId)
         {
@@ -65,3 +71,5 @@ namespace SportsStoreWebApp.Controllers
         }
     }
 }
+
+

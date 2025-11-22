@@ -1,15 +1,93 @@
-using SportsStore.Domain.Abstract;
-using SportsStoreWebApp.Configurations;
+using System.Reflection;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SportsStore.Infrastructure.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using SportsStore.Domain.Abstract;
 using SportsStore.Infrastructure;
+using SportsStore.Infrastructure.Repositories;
+using SportsStoreWebApp.Configurations;
+using Swashbuckle.AspNetCore.SwaggerGen;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
- options.UseSqlServer(
+// Cấu hình JWT Settings từ appsettings.json
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["Key"];
+var issuer = jwtSettings["Issuer"];
+var audience = jwtSettings["Audience"];
 
-builder.Configuration.GetConnectionString("SportsStoreConnection")));
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true, // Kiểm tra thời hạn token
+        ValidateIssuerSigningKey = true, // Kiểm tra chữ ký token
+        ValidIssuer = issuer,
+        ValidAudience = audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+    };
+});
+// Thêm Authorization (phải sau Authentication)
+builder.Services.AddAuthorization(); // Đảm bảo AddAuthorization() được gọi
+
+builder.Services.AddEndpointsApiExplorer(); // Cần thiết cho API Explorer
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SportsStore API",
+        Version = "v1"
+    });
+    // Tùy chỉnh để hỗ trợ JWT Authentication trong Swagger UI
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    // Tích hợp XML comments để tài liệu hóa API
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
+
+
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+
+options.UseSqlServer(builder.Configuration.GetConnectionString("SportsStoreConnection")));
+
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    // Tùy chỉnh các yêu cầu về mật khẩu, lockout... (rất quan trọng cho bảo mật)
+    options.SignIn.RequireConfirmedAccount = false; // Không yêu cầu xác nhận email/tài khoản
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequiredUniqueChars = 0;
+})
+.AddRoles<IdentityRole>() // Thêm hỗ trợ Role (quan trọng cho phân quyền)
+.AddEntityFrameworkStores<ApplicationDbContext>(); // Đăng ký Identity với DbContext đã tạo
 
 // Đăng ký PagingSettings để có thể inject IOptions<PagingSettings> vào Controller
 builder.Services.Configure<PagingSettings>(builder.Configuration.GetSection("PagingSettings"));
@@ -39,15 +117,23 @@ var app = builder.Build();
 // Đăng ký Middleware tùy chỉnh đầu tiên trong pipeline
 app.UseMiddleware<SportsStoreWebApp.Middleware.RequestLoggerMiddleware>();
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseDeveloperExceptionPage(); // Trang lỗi chi tiết cho dev
-}
-else
-{
-    app.UseExceptionHandler("/Home/Error"); // Chuyển hướng đến trang lỗi tùy chỉnh
-    // app.UseHsts(); // Thường được dùng trong Production
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SportsStore API V1");
+    c.RoutePrefix = "swagger"; // Truy cập Swagger UI tại /swagger
+});
+app.UseDeveloperExceptionPage();
+
+// if (app.Environment.IsDevelopment())
+// {
+// app.UseDeveloperExceptionPage(); // Trang lỗi chi tiết cho dev
+// }
+// else
+// {
+//     app.UseExceptionHandler("/Home/Error"); // Chuyển hướng đến trang lỗi tùy chỉnh
+//     // app.UseHsts(); // Thường được dùng trong Production
+// }
 
 app.UseHttpsRedirection();
 
@@ -55,11 +141,20 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthorization();
-
 app.UseSession();
 
 app.MapStaticAssets();
+
+app.UseAuthentication(); // Phải đứng trước UseAuthorization
+
+app.UseAuthorization();
+
+app.MapRazorPages();
+
+// Định tuyến cho các Controller trong Area Admin
+app.MapControllerRoute(
+ name: "Admin",
+ pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}"); //Ví dụ: / Admin / Product / Index
 
 // 1. Tuyến đường cho phân trang CÓ DANH MỤC: Ví dụ: /Bong%20da/Page2
 // - Bắt tham số {category} (chuỗi) và {productPage} (số nguyên)
@@ -108,44 +203,65 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// --- Bắt đầu phần thực hành C# cơ bản ---
-Console.WriteLine("--- Thực hành C# cơ bản ---");
-// Tạo danh sách sản phẩm mẫu
-List<SportsStore.Domain.Models.Product> sampleProducts = new
-List<SportsStore.Domain.Models.Product>
+// // --- Bắt đầu phần thực hành C# cơ bản ---
+// Console.WriteLine("--- Thực hành C# cơ bản ---");
+// // Tạo danh sách sản phẩm mẫu
+// List<SportsStore.Domain.Models.Product> sampleProducts = new
+// List<SportsStore.Domain.Models.Product>
+// {
+// new SportsStore.Domain.Models.Product { ProductID = 1, Name = "Bóng đá World Cup", Description = "Bóng đá chính hãng", Price = 50.00m, Category = "Bóng đá" },
+// new SportsStore.Domain.Models.Product { ProductID = 2, Name = "Áo đấu CLB A", Description = "Áo đấu cho người hâm mộ", Price = 75.50m, Category = "Quần áo" },
+// new SportsStore.Domain.Models.Product { ProductID = 3, Name = "Vợt Tennis Pro", Description = "Vợt chuyên nghiệp", Price = 150.00m, Category = "Tennis" },
+// new SportsStore.Domain.Models.Product { ProductID = 4, Name = "Giày chạy bộ ABC", Description = "Giày thể thao nhẹ", Price = 99.99m, Category = "Giày" },
+// new SportsStore.Domain.Models.Product { ProductID = 5, Name = "Bóng rổ NBA",
+// Description = "Bóng rổ tiêu chuẩn", Price = 45.00m, Category = "Bóng rổ" }
+// };
+// Console.WriteLine("\n--- LINQ: Lọc sản phẩm có giá trên 70 ---");
+// var expensiveProducts = sampleProducts.Where(p => p.Price > 70.00m);
+// foreach (var p in expensiveProducts)
+// {
+//     Console.WriteLine($"- {p.Name} ({p.Price:C})");
+// }
+// Console.WriteLine("\n--- LINQ: Lấy sản phẩm đầu tiên thuộc danh mục 'Bóng đá' ---");
+// var firstFootballProduct = sampleProducts.FirstOrDefault(p => p.Category == "Bóng đá");
+// if (firstFootballProduct != null)
+// {
+//     Console.WriteLine($"- {firstFootballProduct.Name}");
+// }
+// else
+// {
+//     Console.WriteLine("Không tìm thấy sản phẩm bóng đá.");
+// }
+// Console.WriteLine("\n--- Async/Await: Mô phỏng thao tác bất đồng bộ ---");
+// async Task SimulateDataFetchAsync()
+// {
+//     Console.WriteLine("Đang bắt đầu lấy dữ liệu (mất 2 giây)...");
+//     await Task.Delay(2000); // Mô phỏng thao tác tốn thời gian
+//     Console.WriteLine("Đã lấy xong dữ liệu.");
+// }
+// // Gọi hàm bất đồng bộ
+// await SimulateDataFetchAsync(); // Cần `await` ở đây vì hàm Main của .NET 6+ đã là async
+// Console.WriteLine("--- Kết thúc thực hành C# cơ bản ---\n");
+// // --- Kết thúc phần thực hành C# cơ bản ---
+using (var scope = app.Services.CreateScope())
 {
-new SportsStore.Domain.Models.Product { ProductID = 1, Name = "Bóng đá World Cup", Description = "Bóng đá chính hãng", Price = 50.00m, Category = "Bóng đá" },
-new SportsStore.Domain.Models.Product { ProductID = 2, Name = "Áo đấu CLB A", Description = "Áo đấu cho người hâm mộ", Price = 75.50m, Category = "Quần áo" },
-new SportsStore.Domain.Models.Product { ProductID = 3, Name = "Vợt Tennis Pro", Description = "Vợt chuyên nghiệp", Price = 150.00m, Category = "Tennis" },
-new SportsStore.Domain.Models.Product { ProductID = 4, Name = "Giày chạy bộ ABC", Description = "Giày thể thao nhẹ", Price = 99.99m, Category = "Giày" },
-new SportsStore.Domain.Models.Product { ProductID = 5, Name = "Bóng rổ NBA",
-Description = "Bóng rổ tiêu chuẩn", Price = 45.00m, Category = "Bóng rổ" }
-};
-Console.WriteLine("\n--- LINQ: Lọc sản phẩm có giá trên 70 ---");
-var expensiveProducts = sampleProducts.Where(p => p.Price > 70.00m);
-foreach (var p in expensiveProducts)
-{
-    Console.WriteLine($"- {p.Name} ({p.Price:C})");
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        // Áp dụng tất cả các Migrations chưa áp dụng (nếu có)
+        context.Database.Migrate();
+        // Seed Identity Roles và User
+        await AppIdentityDbContextSeed.SeedRolesAndUsers(services);
+        // Seed dữ liệu sản phẩm/danh mục ban đầu (nếu chưa có trong Migration)
+        // await SeedData.EnsurePopulated(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred seeding the DB.");
+    }
 }
-Console.WriteLine("\n--- LINQ: Lấy sản phẩm đầu tiên thuộc danh mục 'Bóng đá' ---");
-var firstFootballProduct = sampleProducts.FirstOrDefault(p => p.Category == "Bóng đá");
-if (firstFootballProduct != null)
-{
-    Console.WriteLine($"- {firstFootballProduct.Name}");
-}
-else
-{
-    Console.WriteLine("Không tìm thấy sản phẩm bóng đá.");
-}
-Console.WriteLine("\n--- Async/Await: Mô phỏng thao tác bất đồng bộ ---");
-async Task SimulateDataFetchAsync()
-{
-    Console.WriteLine("Đang bắt đầu lấy dữ liệu (mất 2 giây)...");
-    await Task.Delay(2000); // Mô phỏng thao tác tốn thời gian
-    Console.WriteLine("Đã lấy xong dữ liệu.");
-}
-// Gọi hàm bất đồng bộ
-await SimulateDataFetchAsync(); // Cần `await` ở đây vì hàm Main của .NET 6+ đã là async
-Console.WriteLine("--- Kết thúc thực hành C# cơ bản ---\n");
-// --- Kết thúc phần thực hành C# cơ bản ---
+// ... các middleware khác ...
+
 app.Run();

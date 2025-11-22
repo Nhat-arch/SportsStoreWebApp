@@ -1,4 +1,5 @@
 // Một service ví dụ
+using Microsoft.AspNetCore.Http;
 public class MyService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;

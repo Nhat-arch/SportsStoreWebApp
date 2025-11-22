@@ -26,7 +26,7 @@
                     <td>@p.ProductID</td>
                     <td>@p.Name</td>
                     <td>@p.Description</td>
-                    <td>@p.Category</td>
+                    <td>@p.CategoryRef.Name</td>
                     <td>@p.Price.ToString("C")</td>
                     <td class="text-center">
                         <a asp-action="Edit" asp-route-productId="@p.ProductID" class="btn btn-sm btn-warning">Sửa</a>

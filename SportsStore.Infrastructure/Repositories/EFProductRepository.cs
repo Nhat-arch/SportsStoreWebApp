@@ -10,7 +10,7 @@ namespace SportsStore.Infrastructure.Repositories
         {
             _context = context;
         }
-        public IQueryable<Product> Products => _context.Products; // Chỉ đơn giản trả về DbSet
+        public IQueryable<Product> Products => _context.Products.Include(p => p.CategoryRef); // Chỉ đơn giản trả về DbSet
                                                                   // Triển khai phương thức SaveProduct từ IProductRepository
         public async Task SaveProduct(Product product)
         {
@@ -28,7 +28,7 @@ namespace SportsStore.Infrastructure.Repositories
                     existingProduct.Name = product.Name;
                     existingProduct.Description = product.Description;
                     existingProduct.Price = product.Price;
-                    existingProduct.Category = product.Category;
+                    existingProduct.CategoryId = product.CategoryId;
                     existingProduct.ImageUrl = product.ImageUrl;
                 }
             }

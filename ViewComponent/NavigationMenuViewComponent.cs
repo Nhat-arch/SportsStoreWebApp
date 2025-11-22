@@ -14,7 +14,7 @@ public class NavigationMenuViewComponent : ViewComponent
         ViewBag.SelectedCategory = RouteData?.Values["category"];
         // Lấy danh sách các danh mục duy nhất từ sản phẩm
         var categories = _productRepository.Products
-        .Select(x => x.Category)
+        .Select(x => x.CategoryRef.Name)
         .Distinct()
         .OrderBy(x => x);
         return View(categories);

@@ -24,12 +24,12 @@ namespace SportsStore.Domain.Models
         [Display(Name = "Giá")]
         public decimal Price { get; set; }
         [Required(ErrorMessage = "Vui lòng chỉ định danh mục.")]
-        [Display(Name = "Danh mục")]
-        public string Category { get; set; } = string.Empty;
         [Display(Name = "URL hình ảnh")]
         public string? ImageUrl { get; set; } // Có thể null
                                               // Thêm một thuộc tính CategoryId để liên kết với Category Model (sẽ tạo sau)
+        [Display(Name = "Danh mục")]
         public int CategoryId { get; set; }
         public Category? CategoryRef { get; set; }
+        public bool IsFeatured { get; set; }
     }
 }

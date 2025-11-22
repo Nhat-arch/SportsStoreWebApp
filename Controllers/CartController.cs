@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SportsStore.Domain.Abstract;
 using SportsStore.Domain.Models;
+using Microsoft.Extensions.Logging;
 using SportsStoreWebApp.Extensions; // Để dùng SessionExtensions
 public class CartController : Controller
 {

@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using SportsStore.Domain.Abstract;
 using SportsStore.Domain.Models;
@@ -94,7 +95,7 @@ namespace SportsStoreWebApp.Controllers
             //int maxPagesToShow = _pagingSettings.MaxPagesToShow; // Có thể dùng sau nếu muốn giới hạn số nút trang hiển thị
             // Lọc sản phẩm theo danh mục (nếu category không null hoặc rỗng)
             // Sau đó sắp xếp và thực hiện phân trang (Skip/Take)
-            var productsQuery = _repository.Products.Where(p => category == null || p.Category == category);
+            var productsQuery = _repository.Products.Where(p => category == null || p.CategoryRef.Name == category);
             var products = productsQuery
             .OrderBy(p => p.ProductID) //Quan trọng: Sắp xếp trước khi Skip / Take để đảm bảo phân trang đúng thứ tự
             .Skip((productPage - 1) * itemsPerPage) // Bỏ qua các sản phẩm của các trang trước đó
@@ -102,7 +103,7 @@ namespace SportsStoreWebApp.Controllers
             .ToList(); // Chuyển kết quả sang List để truyền cho View
                        // Chuẩn bị dữ liệu cần thiết cho View thông qua ViewBag
             ViewBag.Categories = _repository.Products
-            .Select(p => p.Category)
+            .Select(p => p.CategoryRef.Name)
             .Distinct()
             .OrderBy(c => c)
             .ToList();
@@ -150,45 +151,13 @@ namespace SportsStoreWebApp.Controllers
             }
             return Content("Kiểm tra đầu ra console/debug của bạn để tìm nhật ký!");
         }
-        // Action để hiển thị form tạo/chỉnh sửa sản phẩm
-        public IActionResult Edit(int productId = 0)
-        {
-            Product? product = productId == 0 ? new Product() :
-           _repository.Products.FirstOrDefault(p => p.ProductID == productId);
-            if (product == null && productId != 0)
-            {
-                _logger.LogWarning("Không tìm thấy sản phẩm có ID {ProductID} để chỉnh sửa.", productId);
-                return NotFound();
-            }
-            return View(product);
-        }
-        // Action xử lý POST khi người dùng gửi form
-        [HttpPost]
-        [ValidateAntiForgeryToken] // Quan trọng cho bảo mật
-        public IActionResult Edit(Product product)
-        {
-            if (ModelState.IsValid) // Kiểm tra hợp lệ dựa trên Data Annotations
-            {
-                // Logic lưu sản phẩm vào repository (chưa triển khai thực sự)
-                // Ví dụ: _repository.SaveProduct(product);
-                _logger.LogInformation("Dữ liệu sản phẩm cho '{ProductName}' hợp lệ.Sẵn sàng để lưu.", product.Name);
-                TempData["message"] = $"{product.Name} đã được lưu thành công!";
-                return RedirectToAction("List"); // Hoặc Admin Index
-            }
-            else
-            {
-                // Có lỗi validation, hiển thị lại form với các thông báo lỗi
-                _logger.LogWarning("Dữ liệu sản phẩm cho '{ProductName}' không hợp lệ.Lỗi xác thực: { Errors}", product.Name, string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return View(product); // Trả về cùng View với Model có lỗi
-            }
-        }
         public IActionResult FilterProducts(ProductFilter filter) // Model Binding cho ProductFilter
         {
             _logger.LogInformation("Lọc sản phẩn theo Category: {Category}, MinPrice: {MinPrice}, MaxPrice: {MaxPrice }, InStockOnly: { InStock} ", filter.Category, filter.MinPrice, filter.MaxPrice, filter.InStockOnly); // Logic lọc sản phẩm dựa trên filter
             var filteredProducts = _repository.Products;
             if (!string.IsNullOrEmpty(filter.Category))
             {
-                filteredProducts = filteredProducts.Where(p => p.Category == filter.Category);
+                filteredProducts = filteredProducts.Where(p => p.CategoryRef.Name == filter.Category);
             }
             if (filter.MinPrice.HasValue)
             {

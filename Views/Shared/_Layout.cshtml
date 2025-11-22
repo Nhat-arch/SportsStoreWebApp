@@ -37,6 +37,7 @@
                                 <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-info">
                                     <i class="fa fa-shopping-cart"></i> Giỏ hàng </a>
                             </li>
+                            <partial name="_LoginPartial" />
                         </ul>
                         <div class="d-flex">
                             @await Component.InvokeAsync("CartSummary")
