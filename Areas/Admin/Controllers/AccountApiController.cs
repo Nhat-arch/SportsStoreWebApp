@@ -1,20 +1,21 @@
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SportsStore.Domain.Abstract;
 using SportsStore.Domain.Models;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Security.Claims;
 namespace SportsStore.WebUI.Areas.Admin.Controllers
 {
-    [ApiController] // Kích hoạt hành vi API
-    [Route("api/admin/[controller]")] // Route cho API: /api/admin/ProductsApi
-    [Area("Admin")] // Chỉ định Controller này thuộc Admin Area
-                    // Ví dụ một phần trong AccountApiController để tạo JWT
+    [ApiController]
+    [Route("api/admin/[controller]")]
+    [Area("Admin")]
     public class AccountApiController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;

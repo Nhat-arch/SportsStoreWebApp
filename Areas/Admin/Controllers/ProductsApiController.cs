@@ -29,8 +29,7 @@ namespace SportsStore.WebUI.Areas.Admin.Controllers
         [HttpGet("{id}")] // Tham số id từ route
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await _repository.Products.FirstOrDefaultAsync(p =>
-           p.ProductID == id);
+            var product = await _repository.Products.FirstOrDefaultAsync(p => p.ProductID == id);
             if (product == null)
             {
                 return NotFound(); // Trả về 404 Not Found

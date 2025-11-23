@@ -14,6 +14,6 @@ namespace SportsStore.Domain.Models
         [StringLength(50, MinimumLength = 3, ErrorMessage = "Tên danh mục phải từ 3 đến 50 ký tự.")]
         [Display(Name = "Tên danh mục")]
         public string Name { get; set; } = string.Empty;
-        public ICollection<Product> Products { get; set; } = new List<Product>();
+        public ICollection<Product> Products { get; set; }
     }
 }

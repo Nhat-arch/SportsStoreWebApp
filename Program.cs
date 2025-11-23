@@ -16,11 +16,34 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Tên policy CORS tùy chỉnh
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+// Cấu hình CORS Policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+    builder =>
+   {
+       builder.WithOrigins("http://localhost:3000", // Thêm các origin bạn muốn cho phép
+        "http://www.sportsstoreclient.com")
+        .AllowAnyHeader() // Cho phép tất cả các header
+        .AllowAnyMethod(); // Cho phép tất cả các HTTP methods(GET, POST, etc.)
+        // .AllowCredentials(); // Nếu bạn cần gửi cookie/ credentials(thường không dùng với JWT)
+
+   });
+});
+
 // Cấu hình JWT Settings từ appsettings.json
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["Key"];
 var issuer = jwtSettings["Issuer"];
 var audience = jwtSettings["Audience"];
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+                options.JsonSerializerOptions.WriteIndented = true; // Optional for pretty-printing
+            });
 
 builder.Services.AddAuthentication(options =>
 {
@@ -44,36 +67,21 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(); // Đảm bảo AddAuthorization() được gọi
 
 builder.Services.AddEndpointsApiExplorer(); // Cần thiết cho API Explorer
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "SportsStore API",
-        Version = "v1"
-    });
-    // Tùy chỉnh để hỗ trợ JWT Authentication trong Swagger UI
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
     // Tích hợp XML comments để tài liệu hóa API
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
     {
-        c.IncludeXmlComments(xmlPath);
+        options.IncludeXmlComments(xmlPath);
     }
 });
 
-
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
-options.UseSqlServer(builder.Configuration.GetConnectionString("SportsStoreConnection")));
+options.UseSqlServer("Server=.;Database=SportsStoreDB;TrustServerCertificate=True;Integrated Security=True;"));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
@@ -118,16 +126,14 @@ var app = builder.Build();
 app.UseMiddleware<SportsStoreWebApp.Middleware.RequestLoggerMiddleware>();
 
 app.UseSwagger();
-app.UseSwaggerUI(c =>
+app.UseSwaggerUI(options =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SportsStore API V1");
-    c.RoutePrefix = "swagger"; // Truy cập Swagger UI tại /swagger
+    options.SwaggerEndpoint("v1/swagger.json", "My API V1");
 });
-app.UseDeveloperExceptionPage();
 
 // if (app.Environment.IsDevelopment())
 // {
-// app.UseDeveloperExceptionPage(); // Trang lỗi chi tiết cho dev
+app.UseDeveloperExceptionPage(); // Trang lỗi chi tiết cho dev
 // }
 // else
 // {
@@ -141,15 +147,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseSession();
-
-app.MapStaticAssets();
-
 app.UseAuthentication(); // Phải đứng trước UseAuthorization
 
 app.UseAuthorization();
 
-app.MapRazorPages();
+app.UseSession();
+
+app.MapStaticAssets();
+
 
 // Định tuyến cho các Controller trong Area Admin
 app.MapControllerRoute(
@@ -203,6 +208,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapRazorPages();
 // // --- Bắt đầu phần thực hành C# cơ bản ---
 // Console.WriteLine("--- Thực hành C# cơ bản ---");
 // // Tạo danh sách sản phẩm mẫu
@@ -243,12 +249,17 @@ app.MapControllerRoute(
 // await SimulateDataFetchAsync(); // Cần `await` ở đây vì hàm Main của .NET 6+ đã là async
 // Console.WriteLine("--- Kết thúc thực hành C# cơ bản ---\n");
 // // --- Kết thúc phần thực hành C# cơ bản ---
+
+
+
+// Áp dụng Migrations và Seed Data khi ứng dụng khởi động (chỉ cho dev / test)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
+        var context =
+       services.GetRequiredService<ApplicationDbContext>();
         // Áp dụng tất cả các Migrations chưa áp dụng (nếu có)
         context.Database.Migrate();
         // Seed Identity Roles và User
@@ -262,6 +273,4 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred seeding the DB.");
     }
 }
-// ... các middleware khác ...
-
 app.Run();
